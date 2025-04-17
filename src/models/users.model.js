@@ -1,3 +1,4 @@
+//Define a estrutura/forma dos dados
 const fs = require('fs/promises');
 const path = require('path');
 

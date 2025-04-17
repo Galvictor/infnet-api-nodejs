@@ -1,3 +1,4 @@
+//Definição dos endpoints da API
 const express = require('express');
 const router = express.Router();
 

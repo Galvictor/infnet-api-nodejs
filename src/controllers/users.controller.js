@@ -1,3 +1,4 @@
+//Tratamento de requisições/respostas HTTP
 const usersService = require('../services/users.service');
 
 const getAllUsers = async (req, res) => {
