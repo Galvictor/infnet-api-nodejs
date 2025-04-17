@@ -1,17 +1,15 @@
-const usersModel = require('../models/users.model');
+const usersService = require('../services/users.service');
 
 const getAllUsers = async (req, res) => {
     try {
-        const users = await usersModel.getAllUsers();
-
-        if (!users || users.length === 0) {
-            return res.status(404).json({message: 'No users found'});
-        }
-
+        const users = await usersService.getAllUsers();
         res.status(200).json(users);
 
     } catch (error) {
-        console.error('Error fetching users:', error);
+        console.error(error);
+        if (error.message === 'Usuários não encontrados') {
+            return res.status(404).json({message: error.message});
+        }
         res.status(500).json({message: 'Internal Server Error'});
     }
 }
