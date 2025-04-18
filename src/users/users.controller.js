@@ -66,6 +66,11 @@ exports.findUserById = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
     try {
+        // Se estiver atualizando a senha, requer confirmação
+        if (req.body.password && !req.body.confirmPassword) {
+            throw new Error('Confirmação de senha é obrigatória');
+        }
+
         const updatedUser = await userService.update(req.params.id, req.body);
         res.status(200).json({
             success: true,
@@ -74,8 +79,7 @@ exports.updateUser = async (req, res) => {
     } catch (error) {
         res.status(400).json({
             success: false,
-            message: error.message,
-            details: process.env.NODE_ENV === 'development' ? error : undefined
+            message: error.message
         });
     }
 };

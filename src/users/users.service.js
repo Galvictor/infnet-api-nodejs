@@ -32,6 +32,7 @@ class UserService {
             ...userSchema,
             ...userData,
             password: hashedPassword,
+            confirmPassword: undefined, // Remove o campo de confirmação de senha
             id: Date.now().toString(),
             criadoEm: new Date().toISOString(),
             atualizadoEm: new Date().toISOString()
@@ -92,13 +93,16 @@ class UserService {
         const updatedUser = {
             ...db.users[userIndex],
             ...userData,
-            atualizadoEm: new Date().toISOString()
+            password: userData.password
+                ? await bcrypt.hash(userData.password, SALT_ROUNDS)
+                : db.users[userIndex].password,
+            atualizadoEm: new Date().toISOString() // Sempre atualiza
         };
 
         db.users[userIndex] = updatedUser;
         await this.#saveDB(db);
 
-        const {password, ...safeUser} = updatedUser;
+        const {password, confirmPassword, ...safeUser} = updatedUser;
         return safeUser;
     }
 
