@@ -77,7 +77,43 @@ class UserService {
         return rest;
     }
 
-    // Outros métodos: update, delete...
+    async update(id, userData) {
+        const db = await this.#loadDB();
+        const userIndex = db.users.findIndex(u => u.id === id);
+
+        if (userIndex === -1) {
+            throw new Error('Usuário não encontrado');
+        }
+
+        // Validação simples
+        validateUser(userData);
+
+        // Atualiza o usuário
+        const updatedUser = {
+            ...db.users[userIndex],
+            ...userData,
+            atualizadoEm: new Date().toISOString()
+        };
+
+        db.users[userIndex] = updatedUser;
+        await this.#saveDB(db);
+
+        const {password, ...safeUser} = updatedUser;
+        return safeUser;
+    }
+
+    async delete(id) {
+        const db = await this.#loadDB();
+        const userIndex = db.users.findIndex(u => u.id === id);
+
+        if (userIndex === -1) {
+            throw new Error('Usuário não encontrado');
+        }
+
+        db.users.splice(userIndex, 1);
+        await this.#saveDB(db);
+    }
+
 }
 
 module.exports = new UserService();

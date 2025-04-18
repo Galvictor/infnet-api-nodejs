@@ -63,3 +63,35 @@ exports.findUserById = async (req, res) => {
         });
     }
 }
+
+exports.updateUser = async (req, res) => {
+    try {
+        const updatedUser = await userService.update(req.params.id, req.body);
+        res.status(200).json({
+            success: true,
+            data: updatedUser
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message,
+            details: process.env.NODE_ENV === 'development' ? error : undefined
+        });
+    }
+};
+
+exports.deleteUser = async (req, res) => {
+    try {
+        await userService.delete(req.params.id);
+        res.status(204).json({
+            success: true,
+            message: 'Usuário deletado com sucesso'
+        });
+    } catch (error) {
+        res.status(404).json({
+            success: false,
+            message: error.message,
+            details: process.env.NODE_ENV === 'development' ? error : undefined
+        });
+    }
+};
