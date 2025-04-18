@@ -31,3 +31,35 @@ exports.getAllUsers = async (req, res) => {
         });
     }
 };
+
+exports.createUser = async (req, res) => {
+    try {
+        const newUser = await userService.create(req.body);
+        res.status(201).json({
+            success: true,
+            data: newUser
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message,
+            details: process.env.NODE_ENV === 'development' ? error : undefined
+        });
+    }
+};
+
+exports.findUserById = async (req, res) => {
+    try {
+        const user = await userService.findById(req.params.id);
+        res.status(200).json({
+            success: true,
+            data: user
+        });
+    } catch (error) {
+        res.status(404).json({
+            success: false,
+            message: error.message,
+            details: process.env.NODE_ENV === 'development' ? error : undefined
+        });
+    }
+}
