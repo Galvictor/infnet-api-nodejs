@@ -3,6 +3,9 @@
 # lockfiles
 package-lock.json
 
+# database json
+src/data/*.json
+
 # Dependências do Node
 node_modules/
 
