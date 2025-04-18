@@ -1,6 +1,6 @@
 const {readFile, writeFile} = require('fs/promises');
 const path = require('path');
-const {userSchema, validateUser} = require('./users.model');
+const {userSchema, validateCreateUser, validateUpdateUser} = require('./users.model');
 const bcrypt = require('bcryptjs');
 
 const DB_PATH = path.join(__dirname, '../data/users.json');
@@ -16,7 +16,7 @@ class UserService {
     }
 
     async create(userData) {
-        validateUser(userData); // Validação simples
+        validateCreateUser(userData); // Validação simples
 
         const db = await this.#loadDB();
 
@@ -87,15 +87,16 @@ class UserService {
         }
 
         // Validação simples
-        validateUser(userData);
+        validateUpdateUser(userData);
 
         // Atualiza o usuário
         const updatedUser = {
             ...db.users[userIndex],
             ...userData,
             password: userData.password
-                ? await bcrypt.hash(userData.password, SALT_ROUNDS)
+                ? await bcrypt.hash(userData.password, 10)
                 : db.users[userIndex].password,
+            confirmPassword: undefined, // Remove o campo de confirmação de senha
             atualizadoEm: new Date().toISOString() // Sempre atualiza
         };
 

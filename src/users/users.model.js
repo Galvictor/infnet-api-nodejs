@@ -13,7 +13,7 @@ const userSchema = {
 };
 
 // Função de validação
-function validateUser(user) {
+function validateCreateUser(user) {
     const requiredFields = ['nome', 'email', 'password', 'funcao'];
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -45,4 +45,29 @@ function validateUser(user) {
     }
 }
 
-module.exports = {userSchema, validateUser};
+function validateUpdateUser(user) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    // Validações adicionais
+    if (user.password && user.password.length < 6) {
+        throw new Error('Senha deve ter pelo menos 6 caracteres');
+    }
+
+    // Verifica se a senha e a confirmação de senha são iguais
+    if (user.password !== user.confirmPassword) {
+        throw new Error('Senha e confirmação de senha não coincidem');
+    }
+
+    // Valida email
+    if (user.email && !emailRegex.test(user.email)) {
+        throw new Error('Email inválido');
+    }
+
+    // Valida função
+    if (user.funcao && !userSchema.funcao.enum.includes(user.funcao)) {
+        throw new Error(`Função deve ser uma das: ${userSchema.funcao.enum.join(', ')}`);
+    }
+}
+
+
+module.exports = {userSchema, validateCreateUser, validateUpdateUser};
