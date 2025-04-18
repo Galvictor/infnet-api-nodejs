@@ -1,14 +1,22 @@
-//Define a estrutura/forma dos dados
-const fs = require('fs/promises');
-const path = require('path');
+// Schema do usuário
+const userSchema = {
+    id: {type: String, required: true},
+    nome: {type: String, required: true},
+    email: {type: String, required: true, unique: true},
+    password: {type: String, required: true},
+    funcao: {
+        type: String,
+        enum: ['admin', 'aluno', 'professor'],
+        default: 'aluno'
+    }
+};
 
-const filePath = path.join(__dirname, '..', 'data', 'users.json');
-
-const getAllUsers = async () => {
-    const data = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(data);
+// Função de validação
+function validateUser(user) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(user.email)) {
+        throw new Error('Email inválido');
+    }
 }
 
-module.exports = {
-    getAllUsers
-}
+module.exports = {userSchema, validateUser};
