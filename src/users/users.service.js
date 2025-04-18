@@ -1,6 +1,6 @@
 const { readFile, writeFile } = require('fs/promises');
 const path = require('path');
-const { userSchema, validateUser } = require('../models/users.model');
+const { userSchema, validateUser } = require('./users.model');
 
 const DB_PATH = path.join(__dirname, '../data/users.json');
 
