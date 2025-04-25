@@ -66,7 +66,7 @@ class UserService {
         };
     }
 
-    async findById(id) {
+    async getUserById(id) {
         const db = await this.#loadDB();
         const user = db.users.find(u => u.id === id);
 

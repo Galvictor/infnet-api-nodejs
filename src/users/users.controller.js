@@ -5,7 +5,6 @@ exports.login = async (req, res) => {
     try {
         const {email, password} = req.body;
 
-        // 1. Validação básica
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
@@ -13,28 +12,17 @@ exports.login = async (req, res) => {
             });
         }
 
-        // 2. Busca usuário
+        const isValid = await userService.verifyPassword(email, password);
+        if (!isValid) {
+            return res.status(401).json({
+                success: false,
+                message: 'Credenciais inválidas'
+            });
+        }
+
         const user = await userService.findByEmail(email);
-        if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: 'Credenciais inválidas'
-            });
-        }
-
-        // 3. Verifica senha (precisa carregar o usuário completo)
-        const dbUser = await userService.verifyPassword(email, password);
-        if (!dbUser) {
-            return res.status(401).json({
-                success: false,
-                message: 'Credenciais inválidas'
-            });
-        }
-
-        // 4. Gera token
         const token = generateToken(user.id);
 
-        // 5. Retorna resposta
         res.status(200).json({
             success: true,
             token,
@@ -58,15 +46,13 @@ exports.login = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
     try {
+        // Só chega aqui se for admin/professor (middleware já validou)
         const {page = 1, limit = 10, funcao} = req.query;
-        const result = await userService.findAll({page, limit, funcao});
-
-        if (result.results.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Nenhum usuário encontrado com os critérios especificados'
-            });
-        }
+        const result = await userService.findAll({
+            page: parseInt(page),
+            limit: parseInt(limit),
+            funcao
+        });
 
         res.status(200).json({
             success: true,
@@ -82,14 +68,15 @@ exports.getAllUsers = async (req, res) => {
         console.error('Erro no getAllUsers:', error);
         res.status(500).json({
             success: false,
-            message: 'Erro interno no servidor',
-            error: process.env.NODE_ENV === 'development' ? error : undefined
+            message: 'Erro ao buscar usuários',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };
 
 exports.createUser = async (req, res) => {
     try {
+        // Só chega aqui se for admin (middleware já validou)
         const newUser = await userService.create(req.body);
         res.status(201).json({
             success: true,
@@ -99,32 +86,46 @@ exports.createUser = async (req, res) => {
         res.status(400).json({
             success: false,
             message: error.message,
-            details: process.env.NODE_ENV === 'development' ? error : undefined
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 };
 
 exports.findUserById = async (req, res) => {
     try {
-        const user = await userService.findById(req.params.id);
+        // Middleware selfOrAdmin já validou o acesso
+        const user = await userService.getUserById(req.params.id);
+
         res.status(200).json({
             success: true,
             data: user
         });
+
     } catch (error) {
         res.status(404).json({
             success: false,
-            message: error.message,
-            details: process.env.NODE_ENV === 'development' ? error : undefined
+            message: 'Usuário não encontrado',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
-}
+};
 
 exports.updateUser = async (req, res) => {
     try {
-        // Se estiver atualizando a senha, requer confirmação
+        // Bloqueia alteração de função se não for admin
+        if (req.user.funcao !== 'admin' && req.body.funcao) {
+            return res.status(403).json({
+                success: false,
+                message: 'Apenas administradores podem alterar funções'
+            });
+        }
+
+        // Valida confirmação de senha se for atualização
         if (req.body.password && !req.body.confirmPassword) {
-            throw new Error('Confirmação de senha é obrigatória');
+            return res.status(400).json({
+                success: false,
+                message: 'Confirmação de senha é obrigatória para atualização'
+            });
         }
 
         const updatedUser = await userService.update(req.params.id, req.body);
@@ -132,26 +133,28 @@ exports.updateUser = async (req, res) => {
             success: true,
             data: updatedUser
         });
+
     } catch (error) {
-        res.status(400).json({
+        const statusCode = error.message.includes('não encontrado') ? 404 : 400;
+        res.status(statusCode).json({
             success: false,
-            message: error.message
+            message: error.message,
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 };
 
 exports.deleteUser = async (req, res) => {
     try {
+        // Só chega aqui se for admin (middleware já validou)
         await userService.delete(req.params.id);
-        res.status(204).json({
-            success: true,
-            message: 'Usuário deletado com sucesso'
-        });
+        res.status(204).end();
+
     } catch (error) {
         res.status(404).json({
             success: false,
             message: error.message,
-            details: process.env.NODE_ENV === 'development' ? error : undefined
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 };
