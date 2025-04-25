@@ -78,6 +78,20 @@ class UserService {
         return rest;
     }
 
+    async #findUserWithPassword(email) {
+        const db = await this.#loadDB();
+        return db.users.find(user => user.email === email) || null;
+    }
+
+    async findByEmail(email) {
+        const user = await this.#findUserWithPassword(email);
+        if (!user) return null;
+
+        // Remove a senha do retorno
+        const {password, ...userWithoutPassword} = user;
+        return userWithoutPassword;
+    }
+
     async update(id, userData) {
         const db = await this.#loadDB();
         const userIndex = db.users.findIndex(u => u.id === id);
@@ -117,6 +131,13 @@ class UserService {
 
         db.users.splice(userIndex, 1);
         await this.#saveDB(db);
+    }
+
+    async verifyPassword(email, plainPassword) {
+        const user = await this.#findUserWithPassword(email); // Usa o método privado
+        if (!user) return false;
+
+        return bcrypt.compare(plainPassword, user.password);
     }
 
 }

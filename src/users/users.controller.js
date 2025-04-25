@@ -1,4 +1,60 @@
 const userService = require('./users.service');
+const {generateToken} = require('../auth/jwt');
+
+exports.login = async (req, res) => {
+    try {
+        const {email, password} = req.body;
+
+        // 1. Validação básica
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email e senha são obrigatórios'
+            });
+        }
+
+        // 2. Busca usuário
+        const user = await userService.findByEmail(email);
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Credenciais inválidas'
+            });
+        }
+
+        // 3. Verifica senha (precisa carregar o usuário completo)
+        const dbUser = await userService.verifyPassword(email, password);
+        if (!dbUser) {
+            return res.status(401).json({
+                success: false,
+                message: 'Credenciais inválidas'
+            });
+        }
+
+        // 4. Gera token
+        const token = generateToken(user.id);
+
+        // 5. Retorna resposta
+        res.status(200).json({
+            success: true,
+            token,
+            user: {
+                id: user.id,
+                nome: user.nome,
+                email: user.email,
+                funcao: user.funcao
+            }
+        });
+
+    } catch (error) {
+        console.error('Erro no login:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro durante o login',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
 
 exports.getAllUsers = async (req, res) => {
     try {

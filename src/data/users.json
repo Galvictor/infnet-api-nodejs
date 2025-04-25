@@ -217,6 +217,17 @@
       "funcao": "admin",
       "criadoEm": "2023-08-01T11:05:00Z",
       "atualizadoEm": "2023-02-05T14:20:00Z"
+    },
+    {
+      "id": "1745540073107",
+      "nome": "Carlos Oliveira",
+      "email": "carlos@exemplo.com",
+      "password": "$2b$10$xduv/r/KvVNa5Jp6qIE9MenkPeMspWMC/uOXbkN6nVrsorCqTeIGu",
+      "funcao": "professor",
+      "dataNascimento": "1985-08-22",
+      "telefone": "(21) 99876-5432",
+      "criadoEm": "2025-04-25T00:14:33.107Z",
+      "atualizadoEm": "2025-04-25T00:14:33.109Z"
     }
   ]
 }
