@@ -25,20 +25,11 @@ router.get('/me/:id',
     usersController.findUserById
 );
 
-router.get('/me',
-    selfOrAdmin,
-    usersController.getProfile
-);
+router.get('/me', usersController.getProfile);
 
-router.delete('/me',
-    selfOrAdmin,
-    usersController.deleteOwnAccount
-);
+router.delete('/me', usersController.deleteOwnAccount);
 
-router.put('/me',
-    selfOrAdmin,
-    usersController.updateOwnAccount
-)
+router.put('/me', usersController.updateOwnAccount)
 
 router.put('/:id',
     selfOrAdmin, // Aluno só edita seu próprio perfil
