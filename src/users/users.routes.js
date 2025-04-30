@@ -20,10 +20,10 @@ router.post('/',
     usersController.createUser
 );
 
-// router.get('/:id',
-//     selfOrAdmin, // Aluno só acessa seu próprio perfil
-//     usersController.findUserById
-// );
+router.get('/me/:id',
+    selfOrAdmin, // Aluno só acessa seu próprio perfil
+    usersController.findUserById
+);
 
 router.get('/me',
     selfOrAdmin,
