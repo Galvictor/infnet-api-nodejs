@@ -110,6 +110,25 @@ exports.findUserById = async (req, res) => {
     }
 };
 
+exports.getProfile = async (req, res) => {
+    try {
+        // Middleware selfOrAdmin já validou o acesso
+        const user = await userService.getUserById(req.userId);
+
+        res.status(200).json({
+            success: true,
+            data: user
+        });
+
+    } catch (error) {
+        res.status(404).json({
+            success: false,
+            message: 'Usuário não encontrado',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
 exports.updateUser = async (req, res) => {
     try {
         // Bloqueia alteração de função se não for admin
