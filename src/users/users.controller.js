@@ -1,5 +1,5 @@
 const userService = require('./users.service');
-const {generateToken} = require('../auth/jwt');
+const {generateToken, verifyToken, decodeToken} = require('../auth/jwt');
 
 exports.login = async (req, res) => {
     try {

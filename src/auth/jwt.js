@@ -13,4 +13,15 @@ const verifyToken = (token) => {
     return jwt.verify(token, process.env.JWT_SECRET);
 };
 
-module.exports = {generateToken, verifyToken};
+const decodeToken = (token) => {
+    return jwt.decode(token);
+}
+
+const isTokenExpired = (token) => {
+    const decoded = decodeToken(token);
+    if (!decoded) return true; // Se não puder decodificar, consideramos que está expirado
+    const currentTime = Math.floor(Date.now() / 1000); // Tempo atual em segundos
+    return decoded.exp < currentTime;
+}
+
+module.exports = {generateToken, verifyToken, decodeToken, isTokenExpired};
