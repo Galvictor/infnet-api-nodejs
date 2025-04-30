@@ -177,3 +177,18 @@ exports.deleteUser = async (req, res) => {
         });
     }
 };
+
+exports.deleteOwnAccount = async (req, res) => {
+    try {
+        // Middleware selfOrAdmin já validou o acesso
+        await userService.delete(req.userId);
+        res.status(204).end();
+
+    } catch (error) {
+        res.status(404).json({
+            success: false,
+            message: error.message,
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+}
