@@ -35,6 +35,11 @@ router.delete('/me',
     usersController.deleteOwnAccount
 );
 
+router.put('/me',
+    selfOrAdmin,
+    usersController.updateOwnAccount
+)
+
 router.put('/:id',
     selfOrAdmin, // Aluno só edita seu próprio perfil
     authorize(['admin'], {skipOnSelf: true}), // Admin edita qualquer um

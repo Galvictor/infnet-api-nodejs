@@ -139,14 +139,6 @@ exports.updateUser = async (req, res) => {
             });
         }
 
-        // Valida confirmação de senha se for atualização
-        if (req.body.password && !req.body.confirmPassword) {
-            return res.status(400).json({
-                success: false,
-                message: 'Confirmação de senha é obrigatória para atualização'
-            });
-        }
-
         const updatedUser = await userService.update(req.params.id, req.body);
         res.status(200).json({
             success: true,
@@ -162,6 +154,26 @@ exports.updateUser = async (req, res) => {
         });
     }
 };
+
+exports.updateOwnAccount = async (req, res) => {
+    try {
+        // Middleware selfOrAdmin já validou o acesso
+
+        const updatedUser = await userService.update(req.userId, req.body);
+        res.status(200).json({
+            success: true,
+            data: updatedUser
+        });
+
+    } catch (error) {
+        const statusCode = error.message.includes('não encontrado') ? 404 : 400;
+        res.status(statusCode).json({
+            success: false,
+            message: error.message,
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+}
 
 exports.deleteUser = async (req, res) => {
     try {
