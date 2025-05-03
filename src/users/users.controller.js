@@ -21,7 +21,7 @@ exports.login = async (req, res) => {
         }
 
         const user = await userService.findByEmail(email);
-        const token = generateToken(user.id);
+        const token = generateToken(user);
 
         res.status(200).json({
             success: true,
