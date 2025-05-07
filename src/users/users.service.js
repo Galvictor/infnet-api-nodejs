@@ -78,6 +78,29 @@ class UserService {
         return rest;
     }
 
+    async getAllUsersButNotMe({id, funcao, page = 1, limit = 10}) {
+
+        const db = await this.#loadDB();
+        let users = db.users.filter(u => u.id !== id);
+
+        if (funcao) {
+            users = users.filter(u => u.funcao === funcao);
+        }
+
+        // Paginação
+        const startIndex = (page - 1) * limit;
+        const endIndex = page * limit;
+
+        return {
+            total: users.length,
+            results: users.slice(startIndex, endIndex).map(user => {
+                const {password, ...rest} = user;
+                return rest;
+            })
+        };
+
+    }
+
     async #findUserWithPassword(email) {
         const db = await this.#loadDB();
         return db.users.find(user => user.email === email) || null;
