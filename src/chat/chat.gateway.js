@@ -14,14 +14,6 @@ async function loadMessages() {
     }
 }
 
-async function clearMessages() {
-    try {
-        await fs.writeFile(messagesPath, JSON.stringify([]));
-    } catch (err) {
-        console.error('Erro ao limpar mensagens:', err);
-    }
-}
-
 async function saveMessage(message) {
     const messages = await loadMessages();
     messages.push(message);
@@ -30,12 +22,15 @@ async function saveMessage(message) {
 
 async function updateMessageStatus(messageId, status) {
     const messages = await loadMessages();
-    const messageIndex = messages.findIndex(msg => msg.id === messageId);
-
-    if (messageIndex !== -1) {
-        messages[messageIndex].read = status;
+    const message = messages.find(msg => msg.id === messageId);
+    if (message) {
+        message.status = status;
         await fs.writeFile(messagesPath, JSON.stringify(messages, null, 2));
     }
+}
+
+function getRoomName(email1, email2) {
+    return [email1, email2].sort().join('-');
 }
 
 function startChat(io) {
@@ -46,11 +41,9 @@ function startChat(io) {
         try {
             const user = verifyToken(token);
             socket.user = user;
-
-            // Registra o cliente ao conectar
-            clients.set(socket.user.id, {lastMessage: null});
+            clients.set(user.email, socket); // usando email como chave única
             next();
-        } catch (err) {
+        } catch {
             next(new Error('Token inválido'));
         }
     });
@@ -58,41 +51,80 @@ function startChat(io) {
     io.on('connection', (socket) => {
         console.log(`🔌 ${socket.user.nome} conectado`);
 
-        socket.on('send_message', async (data) => {
-            const currentTime = Date.now();
-            const clientInfo = clients.get(socket.user.id);
+        socket.on('join_private_room', ({to}) => {
+            const room = getRoomName(socket.user.email, to);
+            socket.join(room);
+            console.log(`📥 ${socket.user.email} entrou na sala ${room}`);
+        });
 
-            // Bloqueia mensagens repetitivas em um intervalo curto (2 segundos)
-            if (clientInfo && clientInfo.lastMessage && (currentTime - clientInfo.lastMessage < 2000)) {
-                console.log(`❗️ Mensagem bloqueada: ${socket.user.nome} enviou uma mensagem muito rápido`);
+        socket.on('send_private_message', async (data) => {
+            const room = getRoomName(socket.user.email, data.to);
+            const now = Date.now();
+
+            if (
+                clients.get(socket.user.email)?.lastMessage &&
+                now - clients.get(socket.user.email).lastMessage < 2000
+            ) {
+                console.log(`⏱️ ${socket.user.nome} enviou mensagem muito rápido`);
                 return;
             }
 
-            clientInfo.lastMessage = currentTime;
+            clients.get(socket.user.email).lastMessage = now;
 
             const message = {
-                id: Date.now().toString(),
+                id: now.toString(),
                 from: socket.user.email,
                 name: socket.user.nome,
-                to: data.to || 'global',
+                to: data.to,
                 message: data.message,
                 timestamp: new Date().toISOString(),
-                read: false
+                status: 1, // Enviado
+                room
             };
 
             await saveMessage(message);
+            io.to(room).emit('receive_private_message', message);
 
-            socket.emit('message_sent', message);
-            socket.broadcast.emit('receive_message', message);
+            // Se destinatário estiver na sala, atualiza status para "entregue"
+            const targetSocket = clients.get(data.to);
+            if (targetSocket) {
+                message.status = 2;
+                await updateMessageStatus(message.id, 2);
+                io.to(room).emit('message_status_updated', {id: message.id, status: 2});
+            }
         });
 
-        socket.on('typing', () => {
-            socket.broadcast.emit('user_typing', {name: socket.user.nome});
+        socket.on('mark_as_read', async ({from}) => {
+            const room = getRoomName(socket.user.email, from);
+            const messages = await loadMessages();
+            let updated = false;
+
+            for (const msg of messages) {
+                if (
+                    msg.from === from &&
+                    msg.to === socket.user.email &&
+                    msg.room === room &&
+                    msg.status < 3
+                ) {
+                    msg.status = 3;
+                    updated = true;
+                    io.to(room).emit('message_status_updated', {id: msg.id, status: 3});
+                }
+            }
+
+            if (updated) {
+                await fs.writeFile(messagesPath, JSON.stringify(messages, null, 2));
+            }
+        });
+
+        socket.on('typing', ({to}) => {
+            const room = getRoomName(socket.user.email, to);
+            socket.to(room).emit('user_typing', {name: socket.user.nome});
         });
 
         socket.on('disconnect', () => {
             console.log(`❌ ${socket.user.nome} saiu`);
-            clients.delete(socket.user.id); // Remove o cliente ao desconectar
+            clients.delete(socket.user.email);
         });
     });
 }

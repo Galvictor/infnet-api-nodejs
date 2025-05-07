@@ -1,7 +1,7 @@
 const {io} = require("socket.io-client");
 
 async function getToken() {
-    const email = 'ana.silva@email.com'; // ou 'carlos.oliveira@email.com'
+    const email = 'ana.silva@email.com';
     const password = 'senhaSegura123';
 
     const url = 'http://localhost:3000/users/login';
@@ -17,56 +17,51 @@ async function getToken() {
     }
 
     const data = await response.json();
-    console.log('Token:', data.token);
     return data.token;
 }
 
 // Executa o cliente
 (async () => {
     const token = await getToken();
-    console.log('Token obtido:', token);
 
     const socket = io("http://localhost:3000", {
         auth: {token}
     });
 
     socket.on("connect", () => {
-        console.log("✅ Conectado como cliente de teste");
+        console.log("✅ Ana conectada como cliente de teste");
 
-        // Envia apenas uma mensagem
+        // Entra em uma sala privada para conversar com Carlos
+        const to = 'carlos.oliveira@email.com';
+        socket.emit("join_private_room", {to});
+
+        // Envia uma mensagem para Carlos
         setTimeout(() => {
-            socket.emit("send_message", {
-                message: "Olá do terminal!"
+            socket.emit("send_private_message", {
+                to,
+                message: "Olá Carlos! Tudo bem?"
             });
-        }, 1000); // Aguarda 1 segundo antes de enviar a mensagem
+        }, 1000);
 
-        // Simula digitando uma vez
+        // Marca todas as mensagens de Carlos como lidas
         setTimeout(() => {
-            socket.emit("typing");
-        }, 2000); // Aguarda 2 segundos antes de emitir "typing"
+            socket.emit("mark_as_read", {from: to});
+        }, 3000);
     });
 
-    socket.on("receive_message", (msg) => {
-        console.log("📨 Mensagem recebida:", msg);
+    socket.on("receive_private_message", (msg) => {
+        console.log("📨 Mensagem privada recebida:", msg);
+    });
+
+    socket.on("message_status_updated", ({id, status}) => {
+        console.log(`🔄 Status atualizado da mensagem ${id}: ${status}`);
     });
 
     socket.on("user_typing", (data) => {
         console.log(`✏️ ${data.name} está digitando...`);
     });
 
-    socket.on("message_sent", (msg) => {
-        console.log("✅ Mensagem enviada:", msg);
-    });
-
-    socket.on("message_read_ack", (data) => {
-        console.log("👁 Mensagem lida:", data);
-    });
-
-    socket.on("connect_error", (err) => {
-        console.error("Erro de conexão:", err.message);
-    });
-
     socket.on("disconnect", () => {
-        console.log("❌ Desconectado do servidor");
+        console.log("❌ Ana desconectada do servidor");
     });
 })();

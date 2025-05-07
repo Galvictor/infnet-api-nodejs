@@ -15,6 +15,8 @@ router.get('/',
     usersController.getAllUsers
 );
 
+router.get('/chat-list', usersController.getAllUsersLimited);
+
 router.post('/',
     authorize(['admin']), // Apenas admin pode criar
     usersController.createUser

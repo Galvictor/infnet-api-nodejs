@@ -74,6 +74,44 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
+exports.getAllUsersLimited = async (req, res) => {
+    try {
+        // Só chega aqui se for admin/professor (middleware já validou)
+        const {page = 1, limit = 10} = req.query;
+        const result = await userService.findAll({
+            page: parseInt(page),
+            limit: parseInt(limit)
+        });
+
+        res.status(200).json({
+            success: true,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages: Math.ceil(result.total / limit),
+                totalItems: result.total
+            },
+            data: result.results.map(user => {
+                //apenas id, nome, email e funcao
+                return {
+                    id: user.id,
+                    nome: user.nome,
+                    email: user.email,
+                    funcao: user.funcao
+                }
+            })
+        });
+
+    } catch (error) {
+        console.error('Erro no getAllUsersLimited:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar usuários',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+
+}
+
 exports.createUser = async (req, res) => {
     try {
         // Só chega aqui se for admin (middleware já validou)
