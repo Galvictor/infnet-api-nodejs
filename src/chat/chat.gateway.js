@@ -59,12 +59,42 @@ function startChat(io) {
     io.on('connection', (socket) => {
         console.log(`🔌 ${socket.user.nome} conectado`); // Loga quando um cliente conecta
 
+        // Notifica todos os sockets conectados que o usuário está online,
+        // exceto o próprio usuário que acabou de conectar
+        socket.broadcast.emit('usuario_online', {
+            email: socket.user.email,
+            nome: socket.user.nome
+        });
+
+
         // Evento para entrar em uma sala privada
         socket.on('join_private_room', ({to}) => {
-            const room = getRoomName(socket.user.email, to); // Obtém o nome da sala
-            socket.join(room); // Adiciona o socket à sala
+            const room = getRoomName(socket.user.email, to); // Obtem o nome da sala
+            socket.join(room); // Usuário entra na sala
             console.log(`📥 ${socket.user.email} entrou na sala ${room}`);
+
+            // Emite o evento "usuario_entrou_na_sala" para todos na sala (exceto o que entrou)
+            socket.to(room).emit('usuario_entrou_na_sala', {
+                email: socket.user.email,
+                nome: socket.user.nome,
+                room
+            });
         });
+
+        // Evento para sair de uma sala privada
+        socket.on('leave_private_room', ({to}) => {
+            const room = getRoomName(socket.user.email, to); // Obtém o nome da sala
+            socket.leave(room); // Remove o usuário da sala
+            console.log(`👋 ${socket.user.email} saiu da sala ${room}`);
+
+            // Emite evento informando aos outros participantes que o usuário saiu
+            socket.to(room).emit('usuario_saiu_da_sala', {
+                email: socket.user.email,
+                nome: socket.user.nome,
+                room
+            });
+        });
+
 
         // Evento para enviar mensagens privadas
         socket.on('send_private_message', async (data) => {
@@ -141,6 +171,13 @@ function startChat(io) {
         socket.on('disconnect', () => {
             console.log(`❌ ${socket.user.nome} saiu`); // Loga desconexão
             clients.delete(socket.user.email); // Remove o cliente do Map
+
+            // Notifica todos os sockets conectados que o usuário ficou offline
+            socket.broadcast.emit('usuario_offline', {
+                email: socket.user.email,
+                nome: socket.user.nome
+            });
+
         });
     });
 }
