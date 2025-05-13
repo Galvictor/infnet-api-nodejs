@@ -59,13 +59,15 @@ function startChat(io) {
     io.on('connection', (socket) => {
         console.log(`🔌 ${socket.user.nome} conectado`); // Loga quando um cliente conecta
 
+        // Sempre atualiza ou substitui o socket mais recente
+        clients.set(socket.user.email, socket);
+
         // Notifica todos os sockets conectados que o usuário está online,
         // exceto o próprio usuário que acabou de conectar
-        socket.broadcast.emit('usuario_online', {
+        io.emit('usuario_online', {
             email: socket.user.email,
             nome: socket.user.nome
         });
-
 
         // Evento para entrar em uma sala privada
         socket.on('join_private_room', ({to}) => {
@@ -173,7 +175,7 @@ function startChat(io) {
             clients.delete(socket.user.email); // Remove o cliente do Map
 
             // Notifica todos os sockets conectados que o usuário ficou offline
-            socket.broadcast.emit('usuario_offline', {
+            io.emit('usuario_offline', {
                 email: socket.user.email,
                 nome: socket.user.nome
             });
