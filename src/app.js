@@ -2,7 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const {rateLimit} = require('express-rate-limit');
 const app = express();
-const usersRoutes = require('./users/users.routes');
+const usersRoutes = require('./users/users.route');
+const messagesRoute = require("./messages/messages.route");
 require('dotenv').config();
 
 // Configuração do rate limiter
@@ -22,6 +23,7 @@ app.use(limiter);
 app.use(cors());
 app.use(express.json());
 app.use('/users', usersRoutes);
+app.use('/messages', messagesRoute)
 
 // Rota padrão
 app.get('/', (req, res) => {
