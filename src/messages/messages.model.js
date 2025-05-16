@@ -21,7 +21,23 @@ async function getAllMessages() {
 
 async function getMessagesByRoom(room) {
     const messages = await readMessagesFile();
-    return messages.filter(msg => msg.room === room);
+
+    /*
+    room pode vir desse jeito da ana ana.silva@email.com-carlos.oliveira@email.com
+    mas esta vindo do carlos asssim: carlos.oliveira@email.com-ana.silva@email.com
+    então vamos fazer uma gambiarra para arruma isso e poder verificar os 2 casos
+    */
+
+    // Quebra o room em duas partes, separadas pelo '-'
+    const [email1, email2] = room.split('-');
+    const normalizedRoom = [email1, email2].sort().join('-'); // Ordena os e-mails para padronizar
+
+    return messages.filter(msg => {
+        // Padroniza o room de cada mensagem antes de comparar
+        const [msgEmail1, msgEmail2] = msg.room.split('-');
+        const normalizedMsgRoom = [msgEmail1, msgEmail2].sort().join('-');
+        return normalizedMsgRoom === normalizedRoom;
+    });
 }
 
 async function addMessage(message) {
